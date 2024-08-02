@@ -55,7 +55,7 @@ const ObjectDetection: React.FC = () => {
   };
 
   useEffect(() => {
-    const interval = setInterval(detectObjects, 10);
+    const interval = setInterval(detectObjects, 5);
     return () => clearInterval(interval);
   }, [detectObjects]);
 
