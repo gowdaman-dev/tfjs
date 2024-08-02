@@ -60,9 +60,20 @@ const ObjectDetection: React.FC = () => {
   }, [detectObjects]);
 
   return (
-    <div className="flex justify-center items-center max-h-screen w-full bg-gray-100">
-      <Webcam ref={webcamRef} audio={false} width="600" height="450" />
-      <canvas ref={canvasRef} width="600" height="450" />
+    <div className=" relative flex justify-center items-center max-h-screen w-full bg-gray-100">
+      <Webcam
+        ref={webcamRef}
+        className="absolute top-0 left-0 w-full h-full object-cover z-0"
+        audio={false}
+        width="600"
+        height="450"
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute top-0 left-0 w-full h-full object-cover z-10"
+        width="600"
+        height="450"
+      />
     </div>
   );
 };
