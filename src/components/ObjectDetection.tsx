@@ -21,7 +21,7 @@ const ObjectDetection: React.FC = () => {
   const detectObjects = useCallback(async () => {
     if (webcamRef.current && model) {
       const video = webcamRef.current.video;
-      if (video.readyState === 4) {
+      if (video && video.readyState === 4) {
         const predictions = await model.detect(video);
         drawPredictions(predictions);
       }
@@ -60,20 +60,9 @@ const ObjectDetection: React.FC = () => {
   }, [detectObjects]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <Webcam
-        ref={webcamRef}
-        audio={false}
-        className="hidden"
-        width="600"
-        height="450"
-      />
-      <canvas
-        className="rounded h-full"
-        width="600"
-        height="450"
-        ref={canvasRef}
-      />
+    <div>
+      <Webcam ref={webcamRef} audio={false} width="600" height="450" />
+      <canvas ref={canvasRef} width="600" height="450" />
     </div>
   );
 };
