@@ -1,17 +1,17 @@
 "use client";
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import * as cocoSsd from "@tensorflow-models/coco-ssd";
-import "@tensorflow/tfjs";
+import * as tf from "@tensorflow/tfjs";
 import Webcam from "react-webcam";
+import { loadGraphModel } from "@tensorflow/tfjs";
 
 const ObjectDetection: React.FC = () => {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [model, setModel] = useState<cocoSsd.ObjectDetection | null>(null);
+  const [model, setModel] = useState<tf.GraphModel | null>(null);
 
   useEffect(() => {
     const loadModel = async () => {
-      const loadedModel = await cocoSsd.load();
+      const loadedModel = await loadGraphModel("/yolov8n_web_model/model.json");
       setModel(loadedModel);
     };
 
@@ -22,13 +22,26 @@ const ObjectDetection: React.FC = () => {
     if (webcamRef.current && model) {
       const video = webcamRef.current.video;
       if (video && video.readyState === 4) {
-        const predictions = await model.detect(video);
+        // Capture the video frame as a tensor
+        let videoTensor = tf.browser.fromPixels(video);
+
+        // Resize the tensor to the expected input shape [1, 640, 640, 3]
+        videoTensor = tf.image.resizeBilinear(videoTensor, [640, 640]);
+        videoTensor = videoTensor.expandDims(0); // Add batch dimension
+
+        // Run inference using the model
+        const predictions = await model.executeAsync(videoTensor);
+
+        // Process the predictions as needed
         drawPredictions(predictions);
+
+        // Dispose the tensor to release memory
+        videoTensor.dispose();
       }
     }
   }, [model]);
 
-  const drawPredictions = (predictions: cocoSsd.DetectedObject[]) => {
+  const drawPredictions = (predictions: any) => {
     const video = webcamRef.current?.video;
     const canvas = canvasRef.current;
     if (canvas && video) {
@@ -37,40 +50,38 @@ const ObjectDetection: React.FC = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        predictions.forEach((prediction) => {
+        // Assuming predictions is an array of objects with bbox and class properties
+        predictions.forEach((prediction: any) => {
+          const [x, y, width, height] = prediction.bbox;
           ctx.beginPath();
-          ctx.rect(...prediction.bbox);
+          ctx.rect(x, y, width, height);
           ctx.lineWidth = 1;
           ctx.strokeStyle = "red";
           ctx.fillStyle = "red";
           ctx.stroke();
-          ctx.fillText(
-            prediction.class,
-            prediction.bbox[0],
-            prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10,
-          );
+          ctx.fillText(prediction.class, x, y > 10 ? y - 5 : 10);
         });
       }
     }
   };
 
   useEffect(() => {
-    const interval = setInterval(detectObjects, 5);
+    const interval = setInterval(detectObjects, 100);
     return () => clearInterval(interval);
   }, [detectObjects]);
 
   return (
-    <div className=" relative flex justify-center items-center min-h-screen w-full bg-gray-100">
+    <div className="relative flex justify-center items-center min-h-screen w-full bg-gray-100">
       <Webcam
         ref={webcamRef}
-        className="absolute top-0 left-0 w-full h-full object-cover z-0"
+        className="absolute top-0 left-0 w-full h-full md:w-fit md:h-screen object-cover z-0"
         audio={false}
         width="600"
         height="450"
       />
       <canvas
         ref={canvasRef}
-        className="absolute top-0 left-0 md:min-w-full min-h-full object-cover z-10"
+        className="absolute top-0 left-0 w-full h-full md:w-fit md:h-screen object-cover z-10"
         width="600"
         height="450"
       />
