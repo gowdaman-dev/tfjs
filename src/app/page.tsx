@@ -17,20 +17,30 @@ const IndexPage = () => {
   }, []);
 
   const handleFrame = async (video: HTMLVideoElement) => {
-    if (model && video.readyState >= 2) {
-      // READY_STATE_HAVE_CURRENT_DATA
-      if (video.videoWidth > 0 && video.videoHeight > 0) {
-        try {
-          const tensor = tf.browser.fromPixels(video);
-          const predictions = await model.executeAsync(tensor.expandDims(0));
-          // Process and display predictions
-          console.log(predictions);
-        } catch (error) {
-          console.error("Error during object detection:", error);
-        }
-      } else {
-        console.log("Video dimensions are invalid.");
+    if (model && video.videoWidth > 0 && video.videoHeight > 0) {
+      try {
+        // Create tensor from video frame
+        let tensor = tf.browser.fromPixels(video);
+
+        // Resize tensor to match model input shape
+        tensor = tf.image.resizeBilinear(tensor, [640, 640]);
+
+        // Add batch dimension
+        tensor = tensor.expandDims(0);
+
+        // Make predictions
+        const predictions = await model.executeAsync(tensor);
+
+        // Process and display predictions
+        console.log(predictions);
+
+        // Dispose tensor to free up memory
+        tensor.dispose();
+      } catch (error) {
+        console.error("Error during object detection:", error);
       }
+    } else {
+      console.log("Video dimensions are invalid.");
     }
   };
 
