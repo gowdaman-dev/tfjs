@@ -9,7 +9,9 @@ const IndexPage = () => {
 
   useEffect(() => {
     const loadModel = async () => {
-      const model = await tf.loadGraphModel("/best_web_model/model.json");
+      const model = await tf.loadGraphModel(
+        "https://raw.githubusercontent.com/gowdaman-dev/mymodels/main/model.json",
+      );
       setModel(model);
     };
 
